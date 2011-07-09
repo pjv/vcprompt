@@ -73,22 +73,6 @@ class BaseTest(unittest.TestCase):
 
 class Base(object):
 
-    def test_depth(self, path='foo/bar/baz', depth='0', format='%s'):
-        """
-        Tests that vcprompt still works multiple directories deep.
-        """
-        path = os.path.join(self.get_repository(), path)
-        output = self.vcprompt(path=path, max_depth=depth, format=format)
-        self.assertEquals(output, self.get_repository().rsplit('/')[-1])
-
-    def test_depth_limited(self, path='foo/bar/baz', depth='2'):
-        """
-        Tests that the 'depth' argument is followed correctly.
-        """
-        path = os.path.join(self.get_repository(), path)
-        output = self.vcprompt(path=path, max_depth=depth)
-        self.assertEquals(output, '')
-
     def test_format_all(self, string='%s:%n:%r:%h:%b'):
         """
         Tests that all formatting arguments are working correctly.
@@ -122,24 +106,6 @@ class Base(object):
         self.assertEquals(self.vcprompt(format=string),
                           self.config('hash'))
 
-    def test_format_modified(self, string='%m'):
-        """
-        Tests for modified files in the repository.
-        """
-        output = self.vcprompt(format=string)
-        self.assertEquals(output, '')
-
-        f = open(os.path.join(self.get_repository(), 'quotes.txt'), 'w')
-        f.write('foo')
-
-        output = self.vcprompt(format=string)
-        self.assertEquals(output, '+')
-
-        self.revert()
-
-        output = self.vcprompt(format=string)
-        self.assertEquals(output, '')
-
     def test_format_system(self, string='%s'):
         """
         Tests that the '%s' argument correctly returns the system name.
@@ -149,27 +115,9 @@ class Base(object):
 
     def test_format_system_alt(self, string='%n'):
         """
-        Tests that the '%m' argument correctly returns the system name.
+        Tests that the '%n' argument correctly returns the system name.
         """
         return self.test_format_system(string=string)
-
-    def test_format_untracked_files(self, string="%u"):
-        """
-        Tests for any untracked files in the repository.
-        """
-        output = self.vcprompt(format=string)
-        self.assertEquals(output, '')
-
-        file = os.path.join(self.get_repository(), 'untracked_file')
-        self.touch(file)
-
-        output = self.vcprompt(format=string)
-        self.assertEquals(output, '?')
-
-        os.remove(file)
-
-        output = self.vcprompt(format=string)
-        self.assertEquals(output, '')
 
 
 class Bazaar(Base, BaseTest):
@@ -207,12 +155,6 @@ class Subversion(Base, BaseTest):
     revert_command = 'svn revert -R .'
     repository = 'svn'
 
-    def test_depth_limited(self):
-        """
-        SVN puts '.svn' directories everywhere, so the limited depth test
-        doesn't apply here.
-        """
-        return self.test_depth()
 
 if __name__ == '__main__':
     unittest.main()
