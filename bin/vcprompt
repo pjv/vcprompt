@@ -27,16 +27,9 @@ VCS-specific formatting:
 import optparse
 import os
 import re
+import sqlite3
 import sys
 
-try:
-    import sqlite3
-    has_sqlite3 = True
-except ImportError:
-    try:
-        from pysqlite2 import dbapi2 as sqlite3
-    except ImportError:
-        has_sqlite3 = False
 
 __version__ = (0, 1, 5)
 
@@ -233,19 +226,10 @@ def darcs(options):
 
     Distributed. Interactive. Smart.
     """
-    branch = sha = options.unknown
-
-    # branch
-    # darcs doesn't have in-repo local branching (yet), so just use
-    # the directory name for now
-    # see also: http://bugs.darcs.net/issue555
-    branch = os.path.basename(options.path)
-
-    # formatting
     output = options.format
-    output = output.replace('%b', branch)
-    output = output.replace('%h', sha)
-    output = output.replace('%r', sha)
+    output = output.replace('%b', os.path.basename(options.path))
+    output = output.replace('%h', options.unknown)
+    output = output.replace('%r', options.unknown)
     output = output.replace('%s', 'darcs')
     output = output.replace('%n', 'darcs')
     return output
@@ -262,23 +246,22 @@ def fossil(options):
 
     # all this just to get the repository file :(
     repository = None
-    if has_sqlite3:
+    try:
+        conn = None
         try:
-            conn = None
-            try:
-                query = "SELECT value FROM vvar where name = 'repository'"
-                conn = sqlite3.connect(options.file)
-                c = conn.cursor()
-                c.execute(query)
-                repository = c.fetchone()[0]
-            except sqlite3.OperationalError:
-                pass
-        finally:
-            if conn:
-                conn.close()
+            query = "SELECT value FROM vvar where name = 'repository'"
+            conn = sqlite3.connect(options.file)
+            c = conn.cursor()
+            c.execute(query)
+            repository = c.fetchone()[0]
+        except sqlite3.OperationalError:
+            pass
+    finally:
+        if conn:
+            conn.close()
 
     # grab the sha from the repo
-    if repository is not None and has_sqlite3:
+    if repository is not None:
         try:
             conn = None
             try:
@@ -294,7 +277,7 @@ def fossil(options):
                 conn.close()
 
     # branch
-    if sha != options.unknown and has_sqlite3:
+    if sha != options.unknown:
         try:
             conn = None
             try:
