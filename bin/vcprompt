@@ -9,7 +9,6 @@ Options:
   -p, --path PATH            The path to run vcprompt on.
   -u, --unknown UNKNOWN      The "unknown" value.
   -s, --systems              Print all known VCSs and exit
-  -v, --version              Show program's version number and exit
   -h, --help                 Show this help message and exit
 
 VCS-specific formatting:
@@ -29,9 +28,6 @@ import os
 import re
 import sqlite3
 import sys
-
-
-__version__ = (0, 1, 5)
 
 
 # check to make sure the '--without-environment' flag is called first
@@ -150,7 +146,6 @@ def main():
     parser = optparse.OptionParser()
     parser.remove_option('--help')
     parser.add_option('-h', '--help', action='callback', callback=helper)
-    parser.add_option('-v', '--version', action='callback', callback=version)
     parser.add_option('-f', '--format', dest='format', default=FORMAT)
     parser.add_option('-p', '--path', dest='path', default='.')
     parser.add_option('-s', '--systems', action='callback', callback=systems)
