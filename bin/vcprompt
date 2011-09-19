@@ -58,11 +58,6 @@ SYSTEMS = []
 def helper(*args, **kwargs):
     """
     Prints the module's docstring.
-
-    Doing this kills two birds with one stone: it adds PEP 257
-    compliance and allows us to stop using optparse's built-in
-    help flag.
-
     """
     print __doc__.strip()
     sys.exit(0)
