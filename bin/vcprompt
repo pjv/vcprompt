@@ -21,6 +21,12 @@ VCS-specific formatting:
   --format-git FORMAT        Git
   --format-hg FORMAT         Mercurial
   --format-svn FORMAT        Subversion
+
+Format tokens:
+  %s, %n                     The VCS "short name" (e.g. git, hg)
+  %h                         The hash (or commit ID)
+  %r                         The revision ID (or hash)
+  %b                         The currently checked out branch
 """
 
 import optparse
