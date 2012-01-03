@@ -65,7 +65,7 @@ def helper(*args, **kwargs):
     """
     Prints the module's docstring.
     """
-    print __doc__.strip()
+    print >> sys.stderr, __doc__.strip()
     sys.exit(0)
 
 
