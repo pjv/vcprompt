@@ -63,7 +63,7 @@ SYSTEMS = []
 
 def helper(*args, **kwargs):
     """
-    Prints the module's docstring.
+    Prints the help message to stderr.
     """
     print >> sys.stderr, __doc__.strip()
     sys.exit(0)
