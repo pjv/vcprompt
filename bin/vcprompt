@@ -177,8 +177,7 @@ def bzr(options):
 
     # local revision or global sha
     if re.search('%(r|h)', options.format):
-        try:
-            fh = open(options.file, 'r')
+        with open(options.file, 'r') as fh:
             for line in fh:
                 line = line.strip()
                 revision, sha = line.split(' ', 1)
@@ -186,8 +185,6 @@ def bzr(options):
                 if sha != 'null:':
                     sha = sha.rsplit('-', 1)[-1][:7]
                     break
-        except IOError:
-            pass
 
     # formatting
     output = options.format
@@ -312,25 +309,20 @@ def git(options):
     # the current branch is required to get the sha
     if re.search('%(b|r|h)', options.format):
         branch_file = os.path.join(options.file, 'HEAD')
-        try:
-            fh = open(branch_file, 'r')
+        with open(branch_file, 'r') as fh:
             for line in fh:
                 line = line.strip()
                 if line.startswith('ref: refs/heads/'):
                     branch = (line.split('/')[-1] or options.unknown)
                     break
-        except IOError:
-            pass
+
 
         # sha/revision
         if re.search('%(r|h)', options.format) and branch != options.unknown:
             sha_file = os.path.join(options.file, 'refs/heads/%s' % branch)
-            try:
-                fh = open(sha_file, 'r')
+            with open(sha_file, 'r') as fh:
                 for line in fh:
                     sha = line.strip()[0:7]
-            except IOError:
-                pass
 
 
     # formatting
@@ -354,23 +346,17 @@ def hg(options):
 
     # changeset ID or global sha
     if re.search('%(r|h)', options.format):
-        try:
-            fh = open(os.path.join(options.file, 'cache/branchheads'), 'r')
+        with open(os.path.join(options.file, 'cache/branchheads'), 'r') as fh:
             line = fh.readline()
             sha, revision = line.strip().split()
             sha = sha[:7]
-        except IOError:
-            pass
 
     # branch
     if '%b' in options.format:
         file = os.path.join(options.file, 'undo.branch')
-        try:
-            fh = open(file, 'r')
+        with open(file, 'r') as fh:
             line = fh.readline()
             branch = line.strip()
-        except IOError:
-            pass
 
     output = options.format
     output = output.replace('%b', branch)
@@ -392,8 +378,7 @@ def svn(options):
 
     # revision
     if re.search('%(h|r)', options.format):
-        try:
-            fh = open(options.file)
+        with open(options.file) as fh:
             count = 0
             for line in fh:
                 line = line.strip()
@@ -402,8 +387,6 @@ def svn(options):
                     revision = line
                     break
                 count += 1
-        except IOError:
-            pass
 
     # formatting
     output = options.format
