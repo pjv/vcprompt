@@ -308,7 +308,7 @@ def git(options):
 
     # find the "real" .git directory for submodules
     if os.path.isfile(options.file):
-        options.file = open(options.file, "r").read().rstrip('\n').split(" ")[1]
+        options.file = open(options.file, "r").read().rstrip('\n').split(" ", 1)[1]
 
     # the current branch is required to get the sha
     if re.search('%(b|r|h)', options.format):
