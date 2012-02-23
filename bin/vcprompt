@@ -24,8 +24,8 @@ VCS-specific formatting:
 
 Format tokens:
   %s, %n                     The VCS "short name" (e.g. git, hg)
-  %h                         The hash (or commit ID)
-  %r                         The revision ID (or hash)
+  %h                         The hash (or revision number)
+  %r                         The revision number (or hash)
   %b                         The currently checked out branch
 """
 
