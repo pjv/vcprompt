@@ -18,7 +18,7 @@ clean:
 	-@cd tests/repositories/git && [[ -d .git ]] && git reset -q --hard HEAD &>$(stdout)
 	-@cd tests/repositories/hg && hg revert -a --no-backup &>$(stdout)
 	-@cd tests/repositories/svn && svn revert -R . &>$(stdout)
-	-@find . -name untracked_file | xargs rm
+	-@find . -name untracked_file -exec rm {} \;
 
 fetch-bzr:
 	@echo "Fetching Bazaar repository..."
