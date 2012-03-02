@@ -1,12 +1,17 @@
 #!/usr/bin/env python
 from subprocess import Popen, PIPE
-import ConfigParser
 import os
 import re
 import sys
 import unittest
 
-config = ConfigParser.ConfigParser()
+try:
+    import configparser
+except ImportError:
+    import ConfigParser as configparser
+
+
+config = configparser.ConfigParser()
 config.read('tests.cfg')
 
 
@@ -68,7 +73,7 @@ class BaseTest(unittest.TestCase):
             commands.append("--%s" % key)
             commands.append(value)
         process = Popen(commands, stdout=PIPE)
-        return process.communicate()[0].strip()
+        return process.communicate()[0].strip().decode("utf-8")
 
 
 class Base(object):
@@ -83,27 +88,27 @@ class Base(object):
                              self.config('revision'),
                              self.config('hash'),
                              self.config('branch')])
-        self.assertEquals(output, expected)
+        self.assertEqual(output, expected)
 
     def test_format_branch(self, string='%b'):
         """
         Tests that the correct branch name is returned.
         """
         output = self.vcprompt(format=string)
-        self.assertEquals(output, self.config('branch'))
+        self.assertEqual(output, self.config('branch'))
 
     def test_format_revision(self, string='%r'):
         """
         Tests that the correct revision ID or hash is returned.
         """
         output = self.vcprompt(format=string)
-        self.assertEquals(output, self.config('revision'))
+        self.assertEqual(output, self.config('revision'))
 
     def test_format_hash(self, string='%h'):
         """
         Tests that the correct hash or revision ID is returned.
         """
-        self.assertEquals(self.vcprompt(format=string),
+        self.assertEqual(self.vcprompt(format=string),
                           self.config('hash'))
 
     def test_format_system(self, string='%s'):
@@ -111,7 +116,7 @@ class Base(object):
         Tests that the '%s' argument correctly returns the system name.
         """
         output = self.vcprompt(format=string)
-        self.assertEquals(output, self.config('system'))
+        self.assertEqual(output, self.config('system'))
 
     def test_format_system_alt(self, string='%n'):
         """
