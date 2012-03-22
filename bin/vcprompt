@@ -363,7 +363,7 @@ def hg(options):
     return output
 
 
-@vcs(file=".svn/entries")
+@vcs(file=".svn")
 def svn(options):
     """
     Subversion
@@ -372,9 +372,24 @@ def svn(options):
     """
     branch = revision = options.unknown
 
-    # revision
-    if re.search('%(h|r)', options.format):
-        revision = linecache.getline(options.file, 4).strip()
+    # svn 1.7 uses SQLite
+    if os.path.isfile(os.path.join(options.file, 'wc.db')):
+        try:
+            conn = sqlite3.connect(os.path.join(options.file, 'wc.db'))
+            conn.isolation_level = None
+            c = conn.cursor()
+            c.execute("SELECT parent_relpath, revision FROM NODES WHERE kind = 'dir' AND parent_relpath IS NOT NULL")
+            for row in c.fetchall():
+                if options.path.endswith(row[0]):
+                    revision = str(row[1])
+                    break
+            conn.close()
+        except sqlite3.Error as e:
+            pass
+    else:
+        options.file = os.path.join(options.file, 'entries')
+        if re.search('%(h|r)', options.format):
+            revision = linecache.getline(options.file, 4).strip()
 
     # formatting
     output = options.format
