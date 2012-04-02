@@ -21,55 +21,67 @@ clean:
 	-@find . -name untracked_file -exec rm {} \;
 
 fetch-bzr:
-	@echo "Fetching Bazaar repository..."
+	@echo -n "Fetching Bazaar repository..."
 	@if [ -d tests/repositories/bzr ]; then rm -rf tests/repositories/bzr; fi
 	@bzr branch lp:vcprompt-quotes tests/repositories/bzr &>$(stdout)
+	@echo "done."
 
 fetch-darcs:
-	@echo "Fetching Darcs repository..."
+	@echo -n "Fetching Darcs repository..."
 	@if [ -d tests/repositories/darcs ]; then rm -rf tests/repositories/darcs; fi
 	@darcs get http://darcs.djl.im/quotes tests/repositories/darcs &>$(stdout)
+	@echo "done."
 
 fetch-fossil:
-	@echo "Fetching Fossil repository..."
+	@echo -n "Fetching Fossil repository..."
 	@cd tests/repositories/fossil && fossil open fossil &>$(stdout)
+	@echo "done."
 
 fetch-git:
-	@echo "Fetching Git repository..."
+	@echo -n "Fetching Git repository..."
 	@git submodule update --init &>$(stdout)
 	@cd tests/repositories/git && git checkout master &>$(stdout)
+	@echo "done."
 
 fetch-hg:
-	@echo "Fetching Mercurial repository..."
+	@echo -n "Fetching Mercurial repository..."
 	@if [ -d tests/repositories/hg ]; then rm -rf tests/repositories/hg; fi
 	@hg clone https://bitbucket.org/xvzf/quotes tests/repositories/hg &>$(stdout)
+	@echo "done."
 
 fetch-svn:
-	@echo "Fetching out SVN repository..."
+	@echo -n "Fetching out SVN repository..."
 	@if [ -d tests/repositories/svn ]; then rm -rf tests/repositories/svn; fi
 	@svn checkout http://svn.github.com/djl/quotes.git tests/repositories/svn &>$(stdout)
+	@echo "done."
+
 
 fetch-repositories: fetch-bzr fetch-darcs fetch-fossil fetch-git fetch-hg fetch-svn
 
 update-bzr:
-	@echo "Updating Bazaar repository..."
+	@echo -n "Updating Bazaar repository..."
 	@cd tests/repositories/bzr && bzr pull &>$(stdout)
+	@echo "done."
 
 update-darcs:
-	@echo "Updating Darcs repository..."
+	@echo -n "Updating Darcs repository..."
 	@cd tests/repositories/darcs && darcs pull -a &>$(stdout)
+	@echo "done."
 
 update-git:
-	@echo "Updating Git repository..."
+	@echo -n "Updating Git repository..."
 	@git submodule update &>$(stdout)
+	@echo "done."
 
 update-hg:
-	@echo "Updating Mercurial repository..."
+	@echo -n "Updating Mercurial repository..."
 	@cd tests/repositories/hg && hg pull -u
+	@echo "done."
 
 update-svn:
-	@echo "Updating SVN repository..."
+	@echo -n "Updating SVN repository..."
 	@cd tests/repositories/svn && svn up
+	@echo "done."
 
 update-repositories: update-bzr update-darcs update-git update-hg update-svn
 
