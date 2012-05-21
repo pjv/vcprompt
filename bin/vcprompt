@@ -313,7 +313,7 @@ def git(options):
     if re.search('%(b|r|h)', options.format):
         branch_file = os.path.join(options.file, 'HEAD')
         with open(branch_file, 'r') as fh:
-            branch = fh.readline().strip().split('/')[-1]
+            branch = (fh.readline().strip().split('/', 2)[-1] or options.unknown)
 
 
         # sha/revision
