@@ -77,7 +77,7 @@ def systems(*args, **kwargs):
     sys.exit(0)
 
 
-def vcs(file):
+def vcs(files):
     """
     A convenience decorator.
 
@@ -86,7 +86,7 @@ def vcs(file):
     """
     def wrapper(function):
         SYSTEMS.append(function)
-        function.file = file
+        function.files = files
         return function
     return wrapper
 
@@ -125,20 +125,21 @@ def vcprompt(options):
             os.chdir(options.path)
 
         for vcs in SYSTEMS:
-            if not os.path.exists(vcs.file):
-                continue
+            for vfile in vcs.files:
+                if not os.path.exists(vfile):
+                    continue
 
-            # set up custom formatting
-            vcs_format = getattr(options, 'format-' + vcs.__name__, None)
-            if vcs_format:
-                options.format = vcs_format
+                # set up custom formatting
+                vcs_format = getattr(options, 'format-' + vcs.__name__, None)
+                if vcs_format:
+                    options.format = vcs_format
 
-            # the "vcs" file
-            options.file = vcs.file
+                # the "vcs" file
+                options.file = vfile
 
-            prompt = vcs(options)
-            if prompt is not None:
-                return prompt
+                prompt = vcs(options)
+                if prompt is not None:
+                    return prompt
 
         options.path = options.path.rsplit('/', 1)[0]
     return ''
@@ -167,7 +168,7 @@ def main():
     return output
 
 
-@vcs(file=".bzr/branch/last-revision")
+@vcs([".bzr/branch/last-revision"])
 def bzr(options):
     """
     Bazaar
@@ -195,7 +196,7 @@ def bzr(options):
     return output
 
 
-@vcs(file="CVS")
+@vcs(["CVS"])
 def cvs(options):
     """
     CVS
@@ -211,7 +212,7 @@ def cvs(options):
     return output
 
 
-@vcs(file="_darcs")
+@vcs(["_darcs"])
 def darcs(options):
     """
     Darcs
@@ -227,7 +228,7 @@ def darcs(options):
     return output
 
 
-@vcs(file="_FOSSIL_")
+@vcs([".fslckout", "_FOSSIL_"])
 def fossil(options):
     """
     Fossil
@@ -296,7 +297,7 @@ def fossil(options):
     return output
 
 
-@vcs(file=".git")
+@vcs([".git"])
 def git(options):
     """
     Git
@@ -333,7 +334,7 @@ def git(options):
     return output
 
 
-@vcs(file=".hg")
+@vcs([".hg"])
 def hg(options):
     """
     Mercurial
@@ -363,7 +364,7 @@ def hg(options):
     return output
 
 
-@vcs(file=".svn")
+@vcs([".svn"])
 def svn(options):
     """
     Subversion
