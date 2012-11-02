@@ -16,6 +16,11 @@ Formatting options:
   -A, --staged UNKNOWN       The "staged" symbol. Default is '*'
   -M, --modified UNKNOWN     The "modified" symbol. Default is '+'
   -U, --untracked UNKNOWN    The "untracked" symbol. Default is '?'
+  -C, --unpushed UNKNOWN     The "unpushed commits" symbol. Defaults is '>'
+  -X, --num-unpushed UNKNOWN The "number of unpushed commits" format. Default is '#' (must include # in the string!)
+  -F, --unpulled UNKNOWN     The "unpulled commits" symbol. Defaults is '<'
+  -Y, --num-unpulled UNKNOWN The "number of unpulled commits" format. Default is '~' (must include ~ in the string!)
+
 
 VCS-specific formatting:
   These options can be used for VCS-specific prompt formatting.
@@ -38,6 +43,10 @@ Format tokens:
   %u                         Prints question mark if repo has new files
   %P                         The name of the repository root directory
   %p                         The relative path to the repository from cwd
+  %c                         Prints '>' if there are unpushed commits on current branch (git only)
+  %x                         Number of unpushed commits on current branch (git only)
+  %f                         Prints '<' if there are unpulled commits on current branch (git only)
+  %y                         Number of unpulled commits on current branch (git only)
 """
 
 __version__ = '1.0.0'
@@ -87,7 +96,12 @@ SYSTEMS = []
 STAGED = os.environ.get('VCPROMPT_STAGED', '*')
 MODIFIED = os.environ.get('VCPROMPT_MODIFIED', '+')
 UNTRACKED = os.environ.get('VCPROMPT_UNTRACKED', '?')
+UNPUSHED = os.environ.get('VCPROMPT_UNPUSHED', '>')
+UNPULLED = os.environ.get('VCPROMPT_UNPULLED', '<')
 
+# formatting substitution tokens
+NUM_UNPUSHED = os.environ.get('VCPROMPT_NUM_UNPUSHED', '#')  # must include # in the string!
+NUM_UNPULLED = os.environ.get('VCPROMPT_NUM_UNPULLED', '~')  # must include ~ in the string!
 
 # Taken almost wholesale from Python 2.7's posixpath module
 def relpath(path, start=os.path.curdir):
@@ -192,6 +206,10 @@ def vcprompt(options):
                 prompt = prompt.replace("%a", conf.get('staged', ''))
                 prompt = prompt.replace("%s", vcs.__name__)
                 prompt = prompt.replace("%n", vcs.__name__)
+                prompt = prompt.replace("%c", conf.get('unpushed', ''))
+                prompt = prompt.replace("%x", conf.get('num_unpushed', ''))
+                prompt = prompt.replace("%f", conf.get('unpulled', ''))
+                prompt = prompt.replace("%y", conf.get('num_unpulled', ''))
                 prompt = prompt.replace("%P", os.path.basename(options.path))
                 prompt = prompt.replace("%p", relpath(original_path,
                                                       options.path))
@@ -213,6 +231,10 @@ def main():
     parser.add_option('-U', '--untracked', dest='untracked', default=UNTRACKED)
     parser.add_option('-u', '--unknown', dest='unknown', default=UNKNOWN)
     parser.add_option('-v', '--version', action='callback', callback=version)
+    parser.add_option('-C', '--unpushed', dest='unpushed', default=UNPUSHED)
+    parser.add_option('-X', '--num-unpushed', dest='num_unpushed', default=NUM_UNPUSHED)
+    parser.add_option('-F', '--unpulled', dest='unpulled', default=UNPULLED)
+    parser.add_option('-Y', '--num-unpulled', dest='num_unpulled', default=NUM_UNPULLED)
 
     # vcs-specific formatting
     for system in SYSTEMS:
@@ -447,7 +469,7 @@ def git(options):
 
     The fast version control system.
     """
-    staged = branch = sha = modified = untracked = options.unknown
+    staged = branch = sha = modified = untracked = unpushed = num_unpushed = unpulled = num_unpulled = options.unknown
 
     if os.path.isfile(options.file):
         options.file = open(options.file, "r").read().rstrip('\n').split(" ", 1)[1]
@@ -474,8 +496,8 @@ def git(options):
             pass
         return ''
 
-    # the current branch is required to get the sha
-    if re.search('%(b|r|h)', options.format):
+    # the current branch is required to get the sha (+ status of unpushed, unpulled commits)
+    if re.search('%(b|r|h|c|x|f|y)', options.format):
         branch_file = os.path.join(options.file, 'HEAD')
         try:
             fh = open(branch_file, 'r')
@@ -534,6 +556,38 @@ def git(options):
         else:
             staged = ''
 
+    # unpushed / unpulled commits
+    if re.search('%(c|x|f|y)', options.format):
+        command = 'git branch -v --list ' + branch
+        process = Popen(command.split(), stdout=PIPE, stderr=PIPE)
+        output = process.communicate()[0]
+        ahead = re.search('\[ahead (\d+)', output)
+        behind = re.search('behind (\d+)\]', output)
+
+        if ahead:
+            unpushed = options.unpushed
+            unpushed_commits = re.search('\[ahead (\d+)', output).group(1)
+            if unpushed_commits > 0:
+                num_unpushed = options.num_unpushed.replace('#', unpushed_commits)
+            else:
+                num_unpushed = ''
+        if behind:
+            unpulled = options.unpulled
+            unpulled_commits = re.search('behind (\d+)\]', output).group(1)
+            if unpulled_commits > 0:
+                num_unpulled = options.num_unpulled.replace('~', unpulled_commits)
+            else:
+                num_unpulled = ''
+
+        if unpushed == options.unknown:
+            unpushed = ''
+        if num_unpushed == options.unknown:
+            num_unpushed = ''
+        if unpulled == options.unknown:
+            unpulled = ''
+        if num_unpulled == options.unknown:
+            num_unpulled = ''
+
     # formatting
     return {
         'branch': branch,
@@ -541,6 +595,10 @@ def git(options):
         'modified': modified,
         'untracked': untracked,
         'staged': staged,
+        'unpushed': unpushed,
+        'num_unpushed': num_unpushed,
+        'unpulled': unpulled,
+        'num_unpulled': num_unpulled,
         }
 
 
