@@ -49,7 +49,7 @@ Format tokens:
   %y                         Number of unpulled commits on current branch (git only)
 """
 
-__version__ = '1.0.0'
+__version__ = '1.0.1'
 
 from subprocess import call, Popen, PIPE
 from xml.dom.minidom import parseString
@@ -102,6 +102,17 @@ UNPULLED = os.environ.get('VCPROMPT_UNPULLED', '<')
 # formatting substitution tokens
 NUM_UNPUSHED = os.environ.get('VCPROMPT_NUM_UNPUSHED', '#')  # must include # in the string!
 NUM_UNPULLED = os.environ.get('VCPROMPT_NUM_UNPULLED', '~')  # must include ~ in the string!
+
+def popen(command, stdout=PIPE, stderr=PIPE):
+    try:
+        process = Popen(command.split(), stdout=stdout, stderr=stderr)
+        output = process.communicate()[0]
+        returncode = process.returncode
+    except OSError:
+        output = ''
+        returncode = 1
+    return (output, returncode)
+
 
 # Taken almost wholesale from Python 2.7's posixpath module
 def relpath(path, start=os.path.curdir):
@@ -277,17 +288,14 @@ def bzr(options):
 
     # status (modified/untracked)
     if re.search('%[mu]', options.format):
-        command = 'bzr status --short'
-        process = Popen(command.split(), stdout=PIPE)
-        output = process.communicate()[0].strip()
-        returncode = process.returncode
+        output, returncode = popen('bzr status --short')
 
         if returncode == 0:
             if output == '':
                 modified = ''
                 untracked = ''
             else:
-                for line in output.split('\n'):
+                for line in output.strip().split('\n'):
                     if line.startswith('M'):
                         modified = options.modified
                     elif line.startswith('?'):
@@ -324,10 +332,7 @@ def darcs(options):
 
     # sha
     if re.search('%(h|r)', options.format):
-        command = 'darcs changes --last 1 --xml'
-        process = Popen(command.split(), stdout=PIPE, stderr=PIPE)
-        output = process.communicate()[0]
-        returncode = process.returncode
+        output, returncode = popen('darcs changes --last 1 --xml')
 
         if returncode == 0:
             dom = parseString(output)
@@ -342,10 +347,7 @@ def darcs(options):
 
     # modified
     if re.search('%[mu]', options.format):
-        command = 'darcs whatsnew -l -s'
-        process = Popen(command.split(), stdout=PIPE, stderr=PIPE)
-        output = process.communicate()[0]
-        returncode = process.returncode
+        output, returncode = popen('darcs whatsnew -l -s')
 
         if returncode == 1:
             modified = ''
@@ -429,10 +431,7 @@ def fossil(options):
 
     # modified
     if '%m' in options.format:
-        command = 'fossil changes'
-        process = Popen(command.split(), stdout=PIPE)
-        output = process.communicate()[0]
-        returncode = process.returncode
+        output, returncode = popen('fossil changes')
 
         if returncode == 0:
             if output:
@@ -442,10 +441,7 @@ def fossil(options):
 
     # untracked files
     if '%u' in options.format:
-        command = 'fossil extras'
-        process = Popen(command.split(), stdout=PIPE)
-        output = process.communicate()[0]
-        returncode = process.returncode
+        output, returncode = popen('fossil extras')
 
         if returncode == 0:
             if output:
@@ -507,10 +503,7 @@ def git(options):
                     branch = (line.split('/', 2)[-1] or options.unknown)
                     break
             if branch == options.unknown:
-                command = 'git describe --always'
-                process = Popen(command.split(), stdout=PIPE, stderr=PIPE)
-                output = process.communicate()[0]
-                returncode = process.returncode
+                output, returncode = popen('git describe --always')
                 if returncode == 0:
                     branch = "(%s)" % (output.strip())
                 else:
@@ -525,8 +518,7 @@ def git(options):
 
     # modified
     if '%m' in options.format:
-        command = 'git diff --quiet --exit-code'
-        returncode = call(command, stdout=PIPE, stderr=PIPE, shell=True)
+        output, returncode = popen('git diff --quiet --exit-code')
 
         if returncode == 1:
             modified = options.modified
@@ -535,10 +527,7 @@ def git(options):
 
     # untracked files
     if '%u' in options.format:
-        command = 'git ls-files --other --exclude-standard'
-        process = Popen(command.split(), stdout=PIPE, stderr=PIPE)
-        output = process.communicate()[0]
-        returncode = process.returncode
+        output, returncode = popen('git ls-files --other --exclude-standard')
 
         if returncode == 0:
             if output == '':
@@ -548,8 +537,7 @@ def git(options):
 
     # staged files
     if '%a' in options.format:
-        command = 'git diff --quiet --cached --exit-code'
-        returncode = call(command, stdout=PIPE, stderr=PIPE, shell=True)
+        output, returncode = popen('git diff --quiet --cached --exit-code')
 
         if returncode == 1:
             staged = options.staged
@@ -633,10 +621,7 @@ def hg(options):
 
     # modified
     if '%m' in options.format:
-        command = 'hg status --modified'
-        process = Popen(command.split(), stdout=PIPE, stderr=PIPE)
-        output = process.communicate()[0].strip()
-        returncode = process.returncode
+        output, returncode = popen('hg status --modified')
 
         if returncode == 0:
             if output == '':
@@ -646,15 +631,11 @@ def hg(options):
 
     # untracked
     if '%u' in options.format:
-        command = 'hg status --unknown'
-        process = Popen(command.split(), stdout=PIPE, stderr=PIPE)
-        output = process.communicate()[0]
-        returncode = process.returncode
-
-        if output == '':
-            untracked = ''
-        else:
+        output, returncode = popen('hg status --unknown')
+        if output:
             untracked = options.untracked
+        else:
+            untracked = ''
 
     return {
         'branch': branch,
@@ -675,10 +656,7 @@ def svn(options):
     branch = revision = modified = untracked = options.unknown
 
     # branch
-    command = 'svn info %s' % options.path
-    process = Popen(command.split(), stdout=PIPE, stderr=PIPE)
-    output = process.communicate()[0]
-    returncode = process.returncode
+    output, returncode = popen('svn info %s' % options.path)
 
     if returncode == 0:
         # compile some regexes
@@ -702,10 +680,7 @@ def svn(options):
 
     # modified
     if re.search('%[mu]', options.format):
-        command = 'svn status'
-        process = Popen(command, shell=True, stdout=PIPE)
-        output = process.communicate()[0]
-        returncode = process.returncode
+        output, returncode = popen('svn status %s' % options.path)
 
         if returncode == 0:
             modified = ''
